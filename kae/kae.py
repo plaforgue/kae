@@ -450,35 +450,6 @@ def MSD(Z, Y):
     return msd
 
 
-def eps_MSD(Z, Y, epsilon):
-    """Compute the epsilon-insensitive MSD between Z and Y
-
-    Parameters
-    ----------
-    Z: torch.Tensor of shape (n_samples, n_features)
-       Tensor to be compared
-
-    Y: torch.Tensor of shape (n_samples, n_features)
-       Tensor to be compared
-
-    epsilon: float
-             Norm threshold
-
-    Returns
-    -------
-    msd: float
-         Epsilon MSD between Z and Y
-    """
-    N = torch.norm(Z - Y, 2, 1)
-    N -= epsilon
-    m = N > 0
-    mask = torch.tensor(m, dtype=torch.double)
-    N = mask * N
-    msd = (N ** 2).sum()
-    msd /= Z.shape[0]
-    return msd
-
-
 def o_MSD(N_L, lambda_L):
     """Compute MSD (after KRR)
 
@@ -560,7 +531,7 @@ def o_MSD_te(Phi_dic, N_L, ker_dic, Reprs_tr, G_tr_L, G_in_te, G_out_te,
 
 
 def objective(Phi_dic, ker_dic, N_L=None, X=None, G_in=None, Y=None,
-              Reprs=None, Grams=None, epsilon=0.):
+              Reprs=None, Grams=None):
     """Compute objective
 
     Parameters
@@ -621,10 +592,7 @@ def objective(Phi_dic, ker_dic, N_L=None, X=None, G_in=None, Y=None,
 
     else:
         obj += layer_pen(Phi_dic[L], ker_dic[L], Grams[L])
-        if epsilon > 0:
-            obj += eps_MSD(Reprs[L], Y, epsilon)
-        else:
-            obj += MSD(Reprs[L], Y)
+        obj += MSD(Reprs[L], Y)
 
     return obj
 
@@ -784,7 +752,7 @@ class KAE:
                                    self.Grams_tr[self.L], G_out)
 
     def fit(self, X=None, Y=None, G_in=None, G_out=None, method='gd',
-            n_epoch=100, n_loop=10, solver='sgd', epsilon=0., **kwargs):
+            n_epoch=100, n_loop=10, solver='sgd', **kwargs):
         """Fit best parameters Phi_dic from X and Y or G_in and G_out
 
         Parameters
@@ -860,7 +828,7 @@ class KAE:
         # Criterion to be optimized
         def closure():
             loss = objective(self.Phi_dic, self.ker_dic, N_L=self.N_L, X=X,
-                             G_in=G_in, Y=Y, epsilon=epsilon)
+                             G_in=G_in, Y=Y)
             optimizer.zero_grad()
             loss.backward()
             return loss
