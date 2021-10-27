@@ -662,11 +662,11 @@ def compute_Phi_L(k_dic_L, Gram_L, Y):
         Gram_Tot = kron(Gram_L, k_dic_L['outmat'])
         M = Gram_Tot + n * k_dic_L['lambda'] * torch.eye(n * d,
                                                          dtype=torch.float64)
-        Phi_L, _ = torch.gesv(Y.flatten(), M)
+        Phi_L, _ = torch.solve(Y.flatten(), M)
         Phi_L = Phi_L.view(n, -1)
     except KeyError:
         M = Gram_L + n * k_dic_L['lambda'] * torch.eye(n, dtype=torch.float64)
-        Phi_L, _ = torch.gesv(Y, M)
+        Phi_L, _ = torch.solve(Y, M)
 
     # Should be independent from previous layers: .data
     return Phi_L.data
